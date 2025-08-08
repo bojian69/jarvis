@@ -1,0 +1,30 @@
+{
+  "browser": {
+    "headless": false,
+    "window_size": [1920, 1080],
+    "timeout": 10,
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "use_local_profile": true,
+    "browser_type": "auto",
+    "profile_name": "Default",
+    "enable_extensions": true,
+    "load_images": true,
+    "enable_javascript": true
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "max_file_size": "10MB",
+    "backup_count": 5
+  },
+  "api": {
+    "timeout": 30,
+    "retry_count": 3,
+    "retry_delay": 1
+  },
+  "screenshots": {
+    "enabled": true,
+    "quality": 90,
+    "format": "PNG"
+  }
+}

@@ -1,213 +1,209 @@
 # 🤖 Jarvis AI Agent
 
-一个智能AI助手，支持浏览器自动化操作、第三方API调用、Python代码执行等功能。**无需API密钥即可使用核心功能！**
-
-## ✨ 主要功能
-
-### 🆓 核心功能（无需API密钥）
-- 🌐 **浏览器操作**: 使用真实Chrome浏览器，避免反机器人检测
-- 🔍 **智能搜索**: Google搜索及网页浏览
-- 📸 **网页截图**: 保存当前页面截图
-- 🐍 **Python执行**: 内嵌Python代码执行环境
-- 🔌 **通用API**: 调用各种公开API
-- 🛡️ **人工干预**: 支持验证码等人工处理
-
-### 🔑 高级功能（需要API密钥）
-- 🤖 **AI对话**: OpenAI GPT模型对话
-- 🌤️ **天气查询**: 实时天气信息
-- 🔍 **Google API**: 高级搜索功能
-
-## 🚀 快速开始
-
-### 1. 安装依赖
-
-```bash
-cd /Volumes/bojian/github-bojian/jarvis
-python run.py --install
-```
-
-### 2. 检查环境
-
-```bash
-python run.py --check
-```
-
-### 3. 启动应用
-
-**GUI模式 (推荐):**
-```bash
-python run.py --mode gui
-```
-
-**命令行模式:**
-```bash
-python run.py --mode cli
-```
-
-## 📋 无API密钥快速体验
-
-即使没有配置任何API密钥，你也可以立即使用以下功能：
-
-1. **启动浏览器**: 自动打开Chrome浏览器
-2. **网页浏览**: 访问任何网站
-3. **Google搜索**: 直接在Google上搜索
-4. **截图功能**: 保存网页截图
-5. **Python代码**: 执行Python代码片段
-6. **公开API**: 调用GitHub、天气等公开API
-
-```bash
-# 立即开始体验
-python run.py --mode gui
-```
-
-## 🔧 API密钥配置（可选）
-
-如果你想使用AI对话等高级功能，可以配置相应的API密钥：
-
-### OpenAI API Key
-- **获取地址**: https://platform.openai.com/api-keys
-- **用途**: AI对话功能
-- **配置**: 在`.env`文件中设置`OPENAI_API_KEY`
-
-### Google API Key
-- **获取地址**: https://console.cloud.google.com/apis/credentials
-- **用途**: Google服务调用
-- **配置**: 在`.env`文件中设置`GOOGLE_API_KEY`
-
-### 配置步骤
-1. 复制`.env.example`为`.env`
-2. 编辑`.env`文件，填入你的API密钥
-3. 重启应用即可使用高级功能
+一个智能AI助手项目，支持浏览器自动化、API调用、代码执行等功能。
 
 ## 📁 项目结构
 
 ```
 jarvis/
-├── main.py              # 主程序入口
-├── gui.py               # Streamlit GUI界面
-├── run.py               # 启动脚本
-├── browser_tools.py     # 浏览器操作工具
-├── api_tools.py         # API调用工具
-├── requirements.txt     # 项目依赖
-├── .env                 # 环境变量配置
-├── .env.example         # 配置示例
-└── README.md           # 项目说明
+├── v1/                    # 原始版本 (v1.0)
+│   ├── main.py           # 原始主程序
+│   ├── run.py            # 原始运行脚本
+│   ├── gui.py            # 原始Web界面
+│   └── ...               # 其他原始文件
+├── v2/                    # 优化版本 (v2.0) ⭐ 推荐
+│   ├── src/              # 模块化源代码
+│   ├── main.py           # 优化主程序
+│   ├── run.py            # 增强运行脚本
+│   └── ...               # 其他优化文件
+├── .env                  # 环境变量配置
+├── .gitignore           # Git忽略文件
+└── README.md            # 本文件
 ```
 
-## 💡 使用示例
+## 🚀 快速开始
 
-### 浏览器自动化（无需API密钥）
+### 推荐使用 v2.0 版本
 
+```bash
+# 进入v2目录
+cd v2
+
+# 安装依赖
+python run.py --install
+
+# 检查环境
+python run.py --check
+
+# 启动Web界面
+python run.py --gui
+
+# 或启动命令行界面
+python run.py --cli
+
+# 运行功能演示
+python demo.py
+```
+
+### 使用 v1.0 版本（原始版本）
+
+```bash
+# 进入v1目录
+cd v1
+
+# 安装依赖
+python run.py --install
+
+# 启动Web界面
+python run.py --gui
+```
+
+## 📊 版本对比
+
+| 特性 | v1.0 | v2.0 |
+|------|------|------|
+| 代码结构 | 单文件集中 | 模块化分离 ✅ |
+| 日志系统 | 基础日志 | 多级别日志 ✅ |
+| 截图管理 | 手动保存 | 自动截图 ✅ |
+| 中间件支持 | ❌ | 完整支持 ✅ |
+| 配置管理 | 环境变量 | 配置文件+环境变量 ✅ |
+| 用户界面 | Web界面 | Web+CLI界面 ✅ |
+| 错误处理 | 基础处理 | 增强处理+重试 ✅ |
+| 扩展性 | 有限 | 高度可扩展 ✅ |
+
+## 🎯 主要功能
+
+### 🌐 浏览器自动化
+- 真实Chrome浏览器操作
+- 智能元素定位和操作
+- 自动截图记录
+- Google搜索集成
+
+### 🔌 API调用
+- OpenAI GPT模型对话
+- Google搜索API
+- GitHub代码搜索
+- 天气查询API
+- 通用HTTP请求
+
+### 💻 代码执行
+- Python代码安全执行
+- Shell命令执行
+- 文件读写操作
+- Python包自动安装
+
+### 📸 截图和日志
+- 操作过程自动截图
+- 多级别日志记录
+- 结构化日志存储
+- 可视化日志查看
+
+## ⚙️ 配置说明
+
+### 环境变量配置 (.env)
+```bash
+# OpenAI API
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Google API
+GOOGLE_API_KEY=your_google_api_key_here
+GOOGLE_SEARCH_ENGINE_ID=your_search_engine_id_here
+
+# GitHub API
+GITHUB_TOKEN=your_github_token_here
+
+# 其他API密钥...
+```
+
+### v2.0 配置文件 (v2/config/settings.json)
+```json
+{
+  "browser": {
+    "headless": false,
+    "window_size": [1920, 1080],
+    "timeout": 10
+  },
+  "logging": {
+    "level": "INFO",
+    "max_file_size": "10MB"
+  },
+  "api": {
+    "timeout": 30,
+    "retry_count": 3
+  }
+}
+```
+
+## 🛠️ 开发指南
+
+### 选择版本
+- **学习和简单使用**: 选择 v1.0
+- **生产环境和扩展开发**: 选择 v2.0 ⭐
+
+### v2.0 扩展开发
 ```python
-from main import JarvisAgent
+# 添加新功能模块
+from v2.src.core.agent import JarvisAgent
 
-jarvis = JarvisAgent()
-
-# 打开网页
-jarvis.open_url("https://www.google.com")
-
-# Google搜索
-jarvis.search_google("Python AI开发")
-
-# 截图
-jarvis.take_screenshot("search_result.png")
-
-# 等待人工操作
-jarvis.wait_for_manual_action("请处理验证码后按回车...")
-
-jarvis.close()
+with JarvisAgent() as agent:
+    result = agent.execute_command("your_command", **kwargs)
 ```
 
-### API调用（无需API密钥）
-
+### 添加新中间件
 ```python
-from api_tools import APITools
-
-api = APITools()
-
-# 调用GitHub公开API
-result = api.get("https://api.github.com/users/octocat")
-print(f"用户: {result['name']}")
-
-# 测试各种公开API
-api.call_public_api_examples()
+# 在 v2/src/core/middleware.py 中
+class CustomMiddleware(Middleware):
+    def before_request(self, context):
+        # 请求前处理
+        return context
+    
+    def after_request(self, context, result):
+        # 请求后处理
+        return result
 ```
 
-### Python代码执行（无需API密钥）
+## 📋 系统要求
 
-```python
-code = """
-import datetime
-import math
+- **Python**: 3.8+
+- **操作系统**: Windows/macOS/Linux
+- **浏览器**: Chrome（自动下载驱动）
+- **内存**: 建议4GB+
 
-print(f"当前时间: {datetime.datetime.now()}")
-print(f"圆周率: {math.pi:.6f}")
+## 🤝 贡献指南
 
-# 简单计算
-numbers = [1, 2, 3, 4, 5]
-print(f"总和: {sum(numbers)}")
-"""
-
-jarvis.execute_python_code(code)
-```
-
-## 🛡️ 安全特性
-
-- **真实浏览器**: 使用undetected-chromedriver避免检测
-- **用户数据目录**: 保持登录状态和用户偏好
-- **人工干预**: 支持验证码等人工处理
-- **安全执行**: Python代码在受控环境中执行
-- **隐私保护**: API密钥本地存储，不会上传
-
-## 🔍 常见问题
-
-### Q: 没有API密钥可以使用吗？
-A: **可以！** 浏览器自动化、网页搜索、截图、Python执行等核心功能都无需API密钥。
-
-### Q: 浏览器启动失败？
-A: 请确保已安装Google Chrome浏览器，并运行 `python run.py --setup` 检查配置。
-
-### Q: 被网站检测为机器人？
-A: 项目使用真实Chrome浏览器和undetected-chromedriver来避免检测，如遇到验证码可以手动处理。
-
-### Q: 如何添加新的API？
-A: 在`api_tools.py`中添加新的API调用方法，参考现有的API调用示例。
-
-## 🚀 进阶使用
-
-### 自定义浏览器选项
-```python
-# 在main.py中修改Chrome选项
-options.add_argument("--window-size=1920,1080")  # 设置窗口大小
-options.add_argument("--start-maximized")        # 最大化窗口
-```
-
-### 添加新的API服务
-```python
-# 在api_tools.py中添加
-def call_custom_api(self, endpoint):
-    """调用自定义API"""
-    return self.get(f"https://api.example.com/{endpoint}")
-```
-
-### 扩展Python执行环境
-```python
-# 在main.py中的execute_python_code方法中添加更多模块
-import requests
-safe_globals.update({'requests': requests})
-```
-
-## 🤝 贡献
-
-欢迎提交Issue和Pull Request来改进项目！
+1. Fork 项目
+2. 选择合适的版本目录 (v1/ 或 v2/)
+3. 创建功能分支
+4. 提交更改
+5. 创建Pull Request
 
 ## 📄 许可证
 
 MIT License
 
-## 🙏 致谢
+## 🆘 常见问题
 
-- [Selenium](https://selenium.dev/) - 浏览器自动化
-- [undetected-chromedriver](https://github.com/ultrafunkamsterdam/undetected-chromedriver) - 反检测Chrome驱动
-- [Streamlit](https://streamlit.io/) - Web界面框架
-- [Requests](https://requests.readthedocs.io/) - HTTP库
+### Q: 应该选择哪个版本？
+A: 
+- 新用户和生产环境推荐使用 **v2.0**
+- 需要简单快速上手可以使用 v1.0
+- v2.0 提供更好的架构和功能
+
+### Q: 如何从v1.0迁移到v2.0？
+A: 
+- v2.0 保持了API兼容性
+- 配置文件需要重新设置
+- 详细迁移指南请查看 v2/README_DETAILED.md
+
+### Q: 两个版本可以同时使用吗？
+A: 可以，它们在不同目录中，互不干扰
+
+## 📞 支持
+
+- 查看对应版本的README文件获取详细信息
+- 提交Issue报告问题
+- 查看 OPTIMIZATION_SUMMARY.md 了解v2.0优化详情
+
+---
+
+**推荐使用 v2.0 版本获得最佳体验！** 🚀
