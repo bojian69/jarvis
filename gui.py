@@ -115,6 +115,20 @@ def main():
                     add_log(f"打开网站: {name}")
                 else:
                     st.warning("⚠️ 请先启动浏览器")
+        
+        # 专用功能
+        st.subheader("🏠 专用功能")
+        if st.button("🏠 学生住房(London)", use_container_width=True):
+            if st.session_state.jarvis and st.session_state.jarvis.driver:
+                with st.spinner("正在打开学生住房网站并选择London..."):
+                    success = st.session_state.jarvis.open_student_housing_london()
+                if success:
+                    st.success("✅ 已打开学生住房网站并尝试选择London")
+                    add_log("打开学生住房网站(London)")
+                else:
+                    st.error("❌ 打开学生住房网站失败")
+            else:
+                st.warning("⚠️ 请先启动浏览器")
     
     # 主界面
     col1, col2 = st.columns([2, 1])

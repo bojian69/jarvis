@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Jarvis AI Agent - 智能助手
-支持浏览器操作、API调用、本地文件处理
+Jarvis AI Agent - 智能助手 (修复版本)
+修复浏览器闪退问题
 """
 
 import os
@@ -9,6 +9,7 @@ import time
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -50,11 +51,11 @@ class JarvisAgent:
         print("=" * 50)
     
     def setup_browser(self):
-        """设置浏览器 - 修复版本兼容性问题"""
+        """设置浏览器 - 修复版本"""
         try:
             print("🔧 正在配置浏览器...")
             
-            # 方法1: 使用标准Chrome WebDriver（最稳定）
+            # 方法1: 尝试使用标准Chrome配置
             try:
                 options = Options()
                 
@@ -65,43 +66,53 @@ class JarvisAgent:
                 options.add_experimental_option("excludeSwitches", ["enable-automation"])
                 options.add_experimental_option('useAutomationExtension', False)
                 
-                # 窗口配置
+                # 设置窗口大小
                 options.add_argument("--window-size=1280,720")
                 
-                # 用户数据目录
-                user_data_dir = os.path.expanduser("~/Library/Application Support/Google/Chrome/JarvisStandard")
-                if not os.path.exists(user_data_dir):
-                    os.makedirs(user_data_dir, exist_ok=True)
-                options.add_argument(f"--user-data-dir={user_data_dir}")
+                # 禁用一些可能导致崩溃的功能
+                options.add_argument("--disable-extensions")
+                options.add_argument("--disable-plugins")
+                options.add_argument("--disable-images")  # 禁用图片加载以提高稳定性
+                options.add_argument("--disable-javascript")  # 可选：禁用JS以提高稳定性
                 
                 # 设置用户代理
                 options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
                 
+                # 创建独立的用户数据目录
+                user_data_dir = os.path.expanduser("~/Library/Application Support/Google/Chrome/JarvisProfile")
+                if not os.path.exists(user_data_dir):
+                    os.makedirs(user_data_dir, exist_ok=True)
+                options.add_argument(f"--user-data-dir={user_data_dir}")
+                
+                # 使用标准webdriver
                 self.driver = webdriver.Chrome(options=options)
                 print("✅ 使用标准Chrome驱动启动成功")
                 
             except Exception as e1:
-                print(f"⚠️ 标准Chrome驱动失败: {e1}")
-                print("🔄 尝试undetected-chromedriver...")
+                print(f"⚠️ 标准Chrome驱动启动失败: {e1}")
+                print("🔄 尝试使用undetected-chromedriver...")
                 
-                # 方法2: 使用undetected-chromedriver，指定版本138
+                # 方法2: 使用undetected-chromedriver
                 try:
                     options = uc.ChromeOptions()
+                    
+                    # 基础配置
                     options.add_argument("--no-sandbox")
                     options.add_argument("--disable-dev-shm-usage")
                     options.add_argument("--window-size=1280,720")
                     
+                    # 创建独立的用户数据目录
                     user_data_dir = os.path.expanduser("~/Library/Application Support/Google/Chrome/JarvisUC")
                     if not os.path.exists(user_data_dir):
                         os.makedirs(user_data_dir, exist_ok=True)
                     options.add_argument(f"--user-data-dir={user_data_dir}")
                     
-                    # 指定Chrome版本138
+                    # 使用undetected-chromedriver
                     self.driver = uc.Chrome(options=options, version_main=138)
                     print("✅ 使用undetected-chromedriver启动成功")
                     
                 except Exception as e2:
-                    print(f"⚠️ undetected-chromedriver也失败: {e2}")
+                    print(f"⚠️ undetected-chromedriver启动失败: {e2}")
                     print("🔄 尝试最简配置...")
                     
                     # 方法3: 最简配置
@@ -114,26 +125,24 @@ class JarvisAgent:
                         print("✅ 使用最简配置启动成功")
                         
                     except Exception as e3:
-                        print(f"❌ 所有启动方法都失败:")
-                        print(f"   标准驱动: {e1}")
-                        print(f"   UC驱动: {e2}")
-                        print(f"   最简配置: {e3}")
-                        print("💡 请尝试更新Chrome浏览器或重启系统")
-                        self.driver = None
+                        print(f"❌ 所有浏览器启动方法都失败了:")
+                        print(f"   方法1 (标准): {e1}")
+                        print(f"   方法2 (UC): {e2}")
+                        print(f"   方法3 (最简): {e3}")
+                        print("💡 请检查Chrome浏览器是否正确安装")
                         return
             
-            # 设置超时
-            if self.driver:
-                self.driver.set_page_load_timeout(30)
-                self.driver.implicitly_wait(10)
-                
-                # 反检测脚本
-                try:
-                    self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-                except:
-                    pass
-                
-                print("✅ 浏览器配置完成")
+            # 设置页面加载超时
+            self.driver.set_page_load_timeout(30)
+            self.driver.implicitly_wait(10)
+            
+            # 执行反检测脚本
+            try:
+                self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            except:
+                pass
+            
+            print("✅ 浏览器配置完成")
             
         except Exception as e:
             print(f"❌ 浏览器启动失败: {e}")
@@ -142,36 +151,78 @@ class JarvisAgent:
             self.driver = None
     
     def open_url(self, url):
-        """打开指定URL"""
+        """打开指定URL - 增加错误处理"""
         if not self.driver:
             print("❌ 浏览器未启动，无法打开URL")
             return False
             
         try:
+            print(f"🌐 正在打开: {url}")
             self.driver.get(url)
+            
+            # 等待页面加载
+            WebDriverWait(self.driver, 10).until(
+                lambda driver: driver.execute_script("return document.readyState") == "complete"
+            )
+            
             print(f"✅ 已打开: {url}")
             return True
+            
         except Exception as e:
             print(f"❌ 打开URL失败: {e}")
+            print("💡 可能是网络问题或页面加载超时")
             return False
     
     def search_google(self, query):
-        """Google搜索"""
+        """Google搜索 - 增强版本"""
         if not self.driver:
             print("❌ 浏览器未启动，无法进行搜索")
             return False
             
         try:
+            print(f"🔍 正在搜索: {query}")
+            
+            # 先打开Google首页
             self.driver.get("https://www.google.com")
+            time.sleep(2)
             
-            # 等待搜索框加载
-            search_box = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.NAME, "q"))
-            )
+            # 查找搜索框 - 尝试多种选择器
+            search_selectors = [
+                (By.NAME, "q"),
+                (By.CSS_SELECTOR, "input[name='q']"),
+                (By.CSS_SELECTOR, "textarea[name='q']"),
+                (By.CSS_SELECTOR, "[data-ved] input"),
+                (By.CSS_SELECTOR, "form input[type='text']")
+            ]
             
+            search_box = None
+            for by, selector in search_selectors:
+                try:
+                    search_box = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((by, selector))
+                    )
+                    break
+                except:
+                    continue
+            
+            if not search_box:
+                print("❌ 找不到搜索框")
+                return False
+            
+            # 清空并输入搜索词
             search_box.clear()
             search_box.send_keys(query)
+            
+            # 提交搜索
             search_box.submit()
+            
+            # 等待搜索结果加载
+            try:
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "#search"))
+                )
+            except:
+                pass  # 即使没找到结果容器也继续
             
             print(f"✅ Google搜索完成: {query}")
             return True
@@ -181,156 +232,11 @@ class JarvisAgent:
             print("💡 提示: 如遇到验证码，请手动处理后继续")
             return False
     
-    def open_student_housing_london(self):
-        """打开学生住房网站并选择London城市"""
-        if not self.driver:
-            print("❌ 浏览器未启动，无法打开学生住房网站")
-            return False
-            
-        try:
-            print("🏠 正在打开学生住房网站...")
-            url = "https://wearehomesforstudents.com/agent-booking/xejs-uhomes"
-            
-            # 打开网站
-            self.driver.get(url)
-            print(f"✅ 已打开: {url}")
-            
-            # 等待页面加载
-            time.sleep(5)
-            
-            print("🔍 正在查找城市筛选器...")
-            
-            # 尝试多种可能的城市选择器
-            city_selectors = [
-                # 常见的城市筛选器选择器
-                "select[name*='city']",
-                "select[name*='location']", 
-                "select[id*='city']",
-                "select[id*='location']",
-                ".city-selector",
-                ".location-selector",
-                "[data-testid*='city']",
-                "[data-testid*='location']",
-                "select.form-control",
-                "select.form-select",
-                # 下拉菜单按钮
-                ".dropdown-toggle",
-                ".select2-selection",
-                ".chosen-single",
-                # 输入框类型的城市选择器
-                "input[placeholder*='city']",
-                "input[placeholder*='location']",
-                "input[placeholder*='City']",
-                "input[placeholder*='Location']"
-            ]
-            
-            city_element = None
-            found_selector = None
-            
-            for selector in city_selectors:
-                try:
-                    elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                    if elements:
-                        city_element = elements[0]
-                        found_selector = selector
-                        print(f"✅ 找到城市选择器: {selector}")
-                        break
-                except:
-                    continue
-            
-            if not city_element:
-                print("⚠️ 未找到城市选择器，尝试查找包含'London'的元素...")
-                
-                # 查找包含London的所有元素
-                london_selectors = [
-                    "//option[contains(text(), 'London')]",
-                    "//li[contains(text(), 'London')]", 
-                    "//div[contains(text(), 'London')]",
-                    "//span[contains(text(), 'London')]",
-                    "//a[contains(text(), 'London')]",
-                    "//*[contains(text(), 'London')]"
-                ]
-                
-                for selector in london_selectors:
-                    try:
-                        elements = self.driver.find_elements(By.XPATH, selector)
-                        if elements:
-                            print(f"✅ 找到London选项: {len(elements)}个")
-                            # 点击第一个London选项
-                            elements[0].click()
-                            print("✅ 已选择London城市")
-                            time.sleep(2)
-                            return True
-                    except Exception as e:
-                        continue
-                
-                print("❌ 无法找到London选项")
-                print("💡 页面可能需要手动操作，请手动选择London城市")
-                self.wait_for_manual_action("请手动选择London城市，完成后按回车继续...")
-                return True
-            
-            # 如果找到了城市选择器
-            try:
-                # 检查是否是select元素
-                if city_element.tag_name == 'select':
-                    print("📋 检测到下拉选择框")
-                    from selenium.webdriver.support.ui import Select
-                    select = Select(city_element)
-                    
-                    # 尝试通过文本选择London
-                    try:
-                        select.select_by_visible_text('London')
-                        print("✅ 通过文本选择了London")
-                        return True
-                    except:
-                        # 尝试通过值选择
-                        for option in select.options:
-                            if 'london' in option.text.lower():
-                                select.select_by_visible_text(option.text)
-                                print(f"✅ 选择了: {option.text}")
-                                return True
-                
-                # 如果是其他类型的元素，尝试点击
-                elif city_element.is_enabled():
-                    print("🖱️ 尝试点击城市选择器...")
-                    city_element.click()
-                    time.sleep(2)
-                    
-                    # 点击后查找London选项
-                    london_options = self.driver.find_elements(By.XPATH, "//*[contains(text(), 'London')]")
-                    if london_options:
-                        london_options[0].click()
-                        print("✅ 已选择London城市")
-                        return True
-                
-                # 如果是输入框类型
-                elif city_element.tag_name == 'input':
-                    print("⌨️ 检测到输入框，输入London...")
-                    city_element.clear()
-                    city_element.send_keys('London')
-                    time.sleep(1)
-                    
-                    # 查找下拉建议中的London选项
-                    suggestions = self.driver.find_elements(By.XPATH, "//*[contains(text(), 'London')]")
-                    if suggestions:
-                        suggestions[0].click()
-                        print("✅ 从建议中选择了London")
-                        return True
-                
-            except Exception as e:
-                print(f"⚠️ 自动选择失败: {e}")
-            
-            print("💡 自动选择可能未成功，请手动确认London是否已选中")
-            self.wait_for_manual_action("请确认London城市已选中，如需手动选择请操作后按回车继续...")
-            return True
-            
-        except Exception as e:
-            print(f"❌ 打开学生住房网站失败: {e}")
-            return False
-    
     def call_api(self, url, method="GET", headers=None, data=None):
         """调用第三方API - 不依赖特定API密钥"""
         try:
+            print(f"🔌 正在调用API: {url}")
+            
             if method.upper() == "GET":
                 response = requests.get(url, headers=headers, timeout=30)
             elif method.upper() == "POST":
@@ -430,13 +336,19 @@ class JarvisAgent:
     def get_current_url(self):
         """获取当前页面URL"""
         if self.driver:
-            return self.driver.current_url
+            try:
+                return self.driver.current_url
+            except:
+                return None
         return None
     
     def get_page_title(self):
         """获取当前页面标题"""
         if self.driver:
-            return self.driver.title
+            try:
+                return self.driver.title
+            except:
+                return None
         return None
     
     def take_screenshot(self, filename="screenshot.png"):
@@ -456,9 +368,13 @@ class JarvisAgent:
     def close(self):
         """关闭浏览器"""
         if self.driver:
-            self.driver.quit()
-            print("✅ 浏览器已关闭")
-            self.driver = None
+            try:
+                self.driver.quit()
+                print("✅ 浏览器已关闭")
+            except:
+                print("⚠️ 浏览器关闭时出现异常")
+            finally:
+                self.driver = None
 
 def main():
     """主程序"""
@@ -473,22 +389,22 @@ def main():
         
         # 1. 打开Google
         print("\n1️⃣ 打开Google首页")
-        jarvis.open_url("https://www.google.com")
-        time.sleep(2)
-        
-        # 2. 进行搜索
-        print("\n2️⃣ 执行Google搜索")
-        jarvis.search_google("Python AI开发教程")
-        time.sleep(3)
-        
-        # 3. 截图
-        print("\n3️⃣ 保存当前页面截图")
-        jarvis.take_screenshot("google_search_result.png")
-        
-        # 4. 显示当前页面信息
-        print(f"\n4️⃣ 当前页面信息:")
-        print(f"   URL: {jarvis.get_current_url()}")
-        print(f"   标题: {jarvis.get_page_title()}")
+        if jarvis.open_url("https://www.google.com"):
+            time.sleep(3)
+            
+            # 2. 进行搜索
+            print("\n2️⃣ 执行Google搜索")
+            if jarvis.search_google("Python AI开发教程"):
+                time.sleep(3)
+                
+                # 3. 截图
+                print("\n3️⃣ 保存当前页面截图")
+                jarvis.take_screenshot("google_search_result.png")
+                
+                # 4. 显示当前页面信息
+                print(f"\n4️⃣ 当前页面信息:")
+                print(f"   URL: {jarvis.get_current_url()}")
+                print(f"   标题: {jarvis.get_page_title()}")
         
         # 5. 等待用户手动操作
         print("\n5️⃣ 等待用户操作")
@@ -529,19 +445,6 @@ print("=" * 40)
 """
         jarvis.execute_python_code(python_code)
         
-        # 9. 打开更多网站示例
-        print("\n9️⃣ 访问更多网站")
-        sites = [
-            ("GitHub", "https://github.com"),
-            ("Stack Overflow", "https://stackoverflow.com")
-        ]
-        
-        for name, url in sites:
-            print(f"   正在打开 {name}...")
-            jarvis.open_url(url)
-            time.sleep(2)
-            print(f"   ✅ {name} 已打开")
-        
         print("\n🎉 演示完成！")
         print("💡 您可以继续手动操作浏览器，或按Ctrl+C退出程序")
         
@@ -559,7 +462,6 @@ print("=" * 40)
 - search <关键词>: Google搜索
 - screenshot: 截图
 - info: 显示当前页面信息
-- housing: 打开学生住房网站并选择London城市
                 """)
             elif user_input.startswith('url '):
                 url = user_input[4:].strip()
@@ -573,8 +475,6 @@ print("=" * 40)
             elif user_input == 'info':
                 print(f"URL: {jarvis.get_current_url()}")
                 print(f"标题: {jarvis.get_page_title()}")
-            elif user_input == 'housing':
-                jarvis.open_student_housing_london()
             else:
                 print("未知命令，输入 'help' 查看帮助")
         

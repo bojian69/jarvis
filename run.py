@@ -28,6 +28,27 @@ def check_dependencies():
     
     return missing_packages
 
+def run_console():
+    """控制台模式"""
+    print("🤖 启动Jarvis控制台模式...")
+    
+    # 检查依赖
+    missing = check_dependencies()
+    if missing:
+        print(f"❌ 缺少依赖包: {', '.join(missing)}")
+        print("💡 请运行: python run.py --install")
+        return
+    
+    try:
+        from console import JarvisConsole
+        console = JarvisConsole()
+        console.run()
+    except ImportError as e:
+        print(f"❌ 导入失败: {e}")
+        print("💡 请确保所有依赖已正确安装")
+    except Exception as e:
+        print(f"❌ 控制台运行失败: {e}")
+
 def run_cli():
     """命令行模式"""
     print("🤖 启动Jarvis CLI模式...")
@@ -203,7 +224,7 @@ def check_env_file():
 
 def main():
     parser = argparse.ArgumentParser(description="Jarvis AI Agent 启动器")
-    parser.add_argument("--mode", choices=["cli", "gui"], default="gui", 
+    parser.add_argument("--mode", choices=["cli", "gui", "console"], default="gui", 
                        help="启动模式 (默认: gui)")
     parser.add_argument("--install", action="store_true", 
                        help="安装依赖")
@@ -250,6 +271,8 @@ def main():
     
     if args.mode == "cli":
         run_cli()
+    elif args.mode == "console":
+        run_console()
     else:
         run_gui()
 
