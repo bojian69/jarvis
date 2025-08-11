@@ -19,29 +19,16 @@
 
 ## 🚀 快速开始
 
-### 1. 安装依赖
-
 ```bash
-cd /Volumes/bojian/github-bojian/jarvis
+# 安装依赖
 python run.py --install
-```
 
-### 2. 检查环境
-
-```bash
+# 检查环境
 python run.py --check
-```
 
-### 3. 启动应用
-
-**GUI模式 (推荐):**
-```bash
-python run.py --mode gui
-```
-
-**命令行模式:**
-```bash
-python run.py --mode cli
+# 启动应用
+python run.py --mode gui  # GUI模式
+python run.py --mode cli  # 命令行模式
 ```
 
 ## 📋 无API密钥快速体验
@@ -83,15 +70,24 @@ python run.py --mode gui
 
 ```
 jarvis/
-├── main.py              # 主程序入口
-├── gui.py               # Streamlit GUI界面
-├── run.py               # 启动脚本
-├── browser_tools.py     # 浏览器操作工具
-├── api_tools.py         # API调用工具
-├── requirements.txt     # 项目依赖
-├── .env                 # 环境变量配置
-├── .env.example         # 配置示例
-└── README.md           # 项目说明
+├── middleware/          # 中间件系统
+│   ├── __init__.py     # 中间件包初始化
+│   ├── core.py         # 核心中间件系统
+│   ├── request.py      # 请求/响应对象
+│   ├── exceptions.py   # 异常定义
+│   ├── browser.py      # 浏览器中间件
+│   ├── api.py          # API中间件
+│   ├── python_executor.py # Python执行中间件
+│   ├── logging.py      # 日志中间件
+│   └── validation.py   # 验证中间件
+├── logs/                # 日志文件夹
+├── jarvis_agent.py     # 主程序(中间件架构)
+├── gui_middleware.py   # GUI界面
+├── run.py              # 启动脚本
+├── requirements.txt    # 项目依赖
+├── .env                # 环境变量配置
+├── .env.example        # 配置示例
+└── README.md          # 项目说明
 ```
 
 ## 💡 使用示例
@@ -159,6 +155,33 @@ jarvis.execute_python_code(code)
 - **安全执行**: Python代码在受控环境中执行
 - **隐私保护**: API密钥本地存储，不会上传
 
+## 🆕 中间件架构优势
+
+### 🔧 模块化设计
+- **可插拔组件**: 每个功能都是独立的中间件
+- **易于扩展**: 添加新功能只需创建新中间件
+- **代码复用**: 中间件可在不同项目中复用
+
+### 🔄 统一的执行流程
+- **请求/响应模式**: 所有操作都使用统一的接口
+- **中间件链**: 按顺序执行多个中间件
+- **错误传播**: 统一的错误处理机制
+
+### 🛡️ 安全性提升
+- **参数验证**: 自动验证请求参数
+- **权限控制**: 可添加认证中间件
+- **限流保护**: 可添加限流中间件
+
+### 📝 日志记录
+- **完整记录**: 记录所有请求和响应
+- **性能监控**: 记录执行时间
+- **错误追踪**: 详细的错误信息
+
+### 📊 易于测试
+- **单元测试**: 每个中间件可独立测试
+- **集成测试**: 模拟整个中间件链
+- **Mock支持**: 轻松模拟外部依赖
+
 ## 🔍 常见问题
 
 ### Q: 没有API密钥可以使用吗？
@@ -172,6 +195,14 @@ A: 项目使用真实Chrome浏览器和undetected-chromedriver来避免检测，
 
 ### Q: 如何添加新的API？
 A: 在`api_tools.py`中添加新的API调用方法，参考现有的API调用示例。
+
+### Q: 遇到依赖冲突怎么办？
+A: 运行以下命令解决依赖冲突：
+```bash
+pip install --upgrade openai python-dotenv
+# 或者强制重新安装
+pip install --force-reinstall -r requirements.txt
+```
 
 ## 🚀 进阶使用
 
