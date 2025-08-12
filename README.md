@@ -1,168 +1,131 @@
-# 🤖 Jarvis AI机器人
+# 🤖 Jarvis AI 本地文档知识库
 
-一个具备语音识别、AI对话和浏览器控制功能的实体机器人项目。支持OpenAI GPT集成和完整的日志系统。
+> 企业级本地化文档智能问答系统，支持PDF/Markdown文档上传，基于向量检索和本地LLM实现智能问答
 
-## 功能特性
-- 🎤 **语音识别** - 支持中文语音输入
-- 💬 **Web界面** - 现代化的聊天界面
-- 🌐 **浏览器控制** - 语音命令打开浏览器
-- 🤖 **AI智能回复** - 集成OpenAI GPT
-- 📈 **日志系统** - 完整的操作日志
-- 🔊 **语音合成** - TTS语音输出
+## ✨ 核心特性
 
-## 硬件材料
+- 📄 **多格式支持**: PDF、Markdown文档智能解析
+- 🧠 **本地LLM**: 集成Ollama，支持Qwen2.5等中文优化模型
+- 🔍 **语义检索**: 基于向量相似度的智能文档检索
+- 💾 **向量存储**: ChromaDB持久化向量数据库
+- 🌐 **Web界面**: 实时交互的现代化界面
+- 🔒 **数据安全**: 完全本地化部署，数据不出本地
 
-### 基础版本
-- **树莓派 4B** (4GB+) - 主控制器
-- **USB麦克风** - 语音输入
-- **小音箱** - 语音输出
-- **5V 3A电源** - 供电
-- **MicroSD卡** (32GB+) - 存储
+## 🏗️ 系统架构
 
-### 可选配件
-- 摄像头模块 - 视觉交互
-- LED指示灯 - 状态显示
-- 亚克力外壳 - 保护和美观
+```
+📁 jarvis/
+├── 🧠 core/           # 核心业务逻辑
+│   ├── knowledge_engine.py    # 知识库引擎
+│   ├── document_processor.py  # 文档处理器
+│   ├── vector_manager.py      # 向量管理器
+│   └── query_engine.py        # 查询引擎
+├── 🤖 models/         # AI模型层
+│   ├── llm_interface.py       # LLM接口
+│   └── embedding_model.py     # 嵌入模型
+├── 💾 storage/        # 数据存储
+│   ├── documents/             # 文档存储
+│   ├── vector_db/             # 向量数据库
+│   └── uploads/               # 临时上传
+└── ⚙️ config/         # 配置管理
+```
 
-**预算成本：约￥500-850**
-
-## 安装指南
+## 🚀 快速开始
 
 ### 1. 环境准备
 ```bash
-# 克隆项目
-git clone <repository-url>
-cd jarvis
+# 安装Python依赖
+pip install -r requirements.txt
 
-# 给脚本执行权限
-chmod +x setup.sh start.sh
+# 安装Ollama (macOS)
+brew install ollama
+
+# 下载中文模型
+ollama pull qwen2.5:7b
 ```
 
-### 2. 安装依赖
+### 2. 初始化存储
 ```bash
-# 自动安装所有依赖
-./setup.sh
-
-# 或手动安装
-brew install portaudio  # macOS
-pip3 install -r requirements.txt
+# 初始化外挂存储目录
+python scripts/init_storage.py
 ```
 
-### 3. 配置设置
-编辑 `config.py` 文件：
+### 3. 启动服务
+```bash
+# 启动Ollama服务
+ollama serve
+
+# 启动Jarvis AI
+python app.py
+```
+
+### 4. 使用系统
+- 访问: http://localhost:8080
+- 上传PDF或Markdown文档
+- 基于文档内容智能问答
+
+## 📊 技术栈
+
+| 组件 | 技术选型 | 说明 |
+|------|----------|------|
+| **后端框架** | Flask + SocketIO | 轻量级Web框架，支持实时通信 |
+| **向量数据库** | ChromaDB | 开源向量数据库，易于部署 |
+| **文档处理** | PyPDF2 + Markdown | PDF和Markdown解析 |
+| **嵌入模型** | sentence-transformers | 多语言文本向量化 |
+| **本地LLM** | Ollama + Qwen2.5 | 本地大语言模型服务 |
+| **前端** | HTML5 + JavaScript | 现代化Web界面 |
+
+## 🔧 配置说明
+
+### 模型配置 (config/settings.py)
 ```python
-# AI配置
-OPENAI_API_KEY = "your-openai-api-key"  # 可选
-
-# 服务器配置
-HOST = "0.0.0.0"
-PORT = 8080
-
-# 浏览器默认页面
-DEFAULT_URL = "https://www.google.com"
+MODEL_CONFIG = {
+    "llm_url": "http://localhost:11434",     # Ollama服务地址
+    "llm_model": "qwen2.5:7b",              # 使用的LLM模型
+    "embedding_model": "paraphrase-multilingual-MiniLM-L12-v2"  # 嵌入模型
+}
 ```
 
-## 使用方法
-
-### 启动服务
-```bash
-# 方式1：使用启动脚本
-./start.sh
-
-# 方式2：直接运行
-~/.pyenv/shims/python3 jarvis_simple.py
-
-# 方式3：完整版本（需要麦克风）
-python3 jarvis_robot.py
+### 存储配置 (外挂磁盘)
+```python
+STORAGE_CONFIG = {
+    "documents_path": "/Volumes/common/jarvis/documents",    # 文档存储
+    "vector_db_path": "/Volumes/common/jarvis/vector_db",    # 向量数据库
+    "uploads_path": "/Volumes/common/jarvis/uploads",        # 临时上传
+    "cache_path": "/Volumes/common/jarvis/cache"             # 缓存文件
+}
 ```
 
-### 访问界面
-打开浏览器访问：`http://localhost:8080`
+### 推荐模型选择
+| 内存要求 | 推荐模型 | 特点 |
+|----------|----------|------|
+| 4GB | qwen2.5:1.5b | 轻量级，响应快 |
+| 8GB | qwen2.5:7b | 平衡性能和资源 |
+| 16GB+ | qwen2.5:14b | 高质量回答 |
 
-### 使用功能
-1. **文本聊天** - 在输入框中输入消息
-2. **语音交互** - 点击🎤按钮进行语音输入
-3. **浏览器控制** - 说“打开浏览器”
+## 📈 使用流程
 
-## 项目结构
-```
-jarvis/
-├── jarvis_simple.py    # 简化版本（推荐）
-├── jarvis_robot.py     # 完整版本
-├── config.py           # 配置文件
-├── requirements.txt    # Python依赖
-├── setup.sh           # 安装脚本
-├── start.sh           # 启动脚本
-├── jarvis.log         # 日志文件
-├── templates/
-│   └── index.html      # Web界面
-└── README.md          # 项目说明
-```
+1. **文档上传** → 系统解析PDF/MD文件
+2. **文本分块** → 智能切分长文档
+3. **向量化** → 生成文本嵌入向量
+4. **存储** → 保存到ChromaDB
+5. **查询** → 用户提问触发语义检索
+6. **生成** → LLM基于检索结果生成回答
 
-## 安全注意事项
+## 📝 详细文档
 
-⚠️ **重要安全提示**：
+- [部署指南](setup_guide.md) - 详细的环境配置和部署说明
+- [项目架构](project_structure.md) - 完整的系统架构设计
+- [API文档](api/README.md) - 接口使用说明
 
-1. **API密钥安全**
-   - 不要将OpenAI API Key提交到版本控制
-   - 使用环境变量存储敏感信息
-   - 定期轮换API密钥
+## 🤝 贡献
 
-2. **生产环境**
-   - 关闭调试模式
-   - 使用HTTPS加密
-   - 配置防火墙规则
+欢迎提交Issue和Pull Request来改进项目！
 
-3. **输入验证**
-   - 用户输入已做基础清理
-   - 日志记录可能存在注入风险
+## 📄 许可证
 
-## 故障排除
+MIT License
 
-### 常见问题
+---
 
-**1. 端口被占用**
-```bash
-# 查看端口占用
-lsof -i :8080
-# 终止进程
-kill -9 <PID>
-```
-
-**2. 麦克风权限问题**
-- macOS: 系统偏好设置 > 安全性与隐私 > 麦克风
-- 添加终端应用权限
-
-**3. OpenAI API错误**
-- 检查API Key是否有效
-- 确认账户余额充足
-- 检查网络连接
-
-### 日志查看
-```bash
-# 实时查看日志
-tail -f jarvis.log
-
-# 查看错误日志
-grep "ERROR" jarvis.log
-```
-
-## 开发计划
-
-- [ ] 支持更多语音命令
-- [ ] 添加智能家居控制
-- [ ] 集成更多AI模型
-- [ ] 移动端App开发
-- [ ] 语音识别精度优化
-
-## 贡献指南
-
-欢迎提交Issue和Pull Request！
-
-## 许可证
-
-MIT License - 详见LICENSE文件
-
-## 联系方式
-
-如有问题请提交Issue或联系开发者。
+**🎯 适用场景**: 企业文档管理、个人知识库、学术研究、技术文档问答
