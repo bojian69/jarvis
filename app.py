@@ -9,6 +9,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
 from pathlib import Path
 import os
+import socket
 
 from config.settings import get_config
 from core.knowledge_engine import KnowledgeEngine
@@ -64,6 +65,12 @@ def upload_file():
         # 添加到知识库
         result = knowledge_engine.add_document(str(temp_path), doc_type)
         
+        # 记录文件上传
+        if result.get('success'):
+            logging.info(f"📄 文件上传成功: {file.filename} ({doc_type})")
+        else:
+            logging.warning(f"⚠️ 文件上传失败: {file.filename} - {result.get('error', '未知错误')}")
+        
         # 清理临时文件
         temp_path.unlink()
         
@@ -82,8 +89,17 @@ def handle_query(data):
             emit('response', {'answer': '请输入问题', 'sources': []})
             return
         
+        # 记录用户问题
+        logging.info(f"💬 用户问题: {question[:100]}{'...' if len(question) > 100 else ''}")
+        
         # 查询知识库
         result = knowledge_engine.query(question)
+        
+        # 记录AI回复
+        answer_preview = result['answer'][:150].replace('\n', ' ')
+        sources_count = len(result.get('sources', []))
+        logging.info(f"🤖 AI回复: {answer_preview}{'...' if len(result['answer']) > 150 else ''} [来源:{sources_count}个]")
+        
         emit('response', result)
         
     except Exception as e:
@@ -148,13 +164,29 @@ def view_file(filename):
         logging.error(f"查看文件错误: {e}")
         return jsonify({'error': str(e)}), 500
 
+def get_local_ip():
+    """获取本机IP地址"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
 if __name__ == '__main__':
     logging.info("🤖 Jarvis AI 知识库启动中...")
-    logging.info(f"访问地址: http://localhost:{config['port']}")
+    
+    local_ip = get_local_ip()
+    port = config['port']
+    
+    logging.info(f"🌐 本地访问: http://localhost:{port}")
+    logging.info(f"🌍 外网访问: http://{local_ip}:{port}")
     
     socketio.run(
         app,
         host=config['host'],
-        port=config['port'],
+        port=port,
         debug=config['debug']
     )
