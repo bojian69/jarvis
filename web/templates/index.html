@@ -5,59 +5,272 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jarvis AI 知识库</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .upload-area { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .chat-area { background: white; padding: 20px; border-radius: 8px; height: 400px; overflow-y: auto; margin-bottom: 20px; }
-        .input-area { display: flex; gap: 10px; }
-        .input-area input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
-        .input-area button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .message { margin: 10px 0; padding: 10px; border-radius: 4px; }
-        .user-message { background: #e3f2fd; text-align: right; }
-        .ai-message { background: #f1f8e9; }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0; padding: 0; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh; overflow: hidden;
+        }
+        .container { 
+            display: flex; flex-direction: column;
+            height: 100vh; max-width: 1000px; 
+            margin: 0 auto; padding: 20px;
+        }
+        .header { 
+            text-align: center; margin-bottom: 20px;
+            color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .header h1 { margin: 0; font-size: 2.2em; font-weight: 300; }
+        .header p { margin: 5px 0 0; opacity: 0.9; }
+        
+        .upload-area { 
+            background: rgba(255,255,255,0.95); 
+            padding: 15px 20px; border-radius: 12px; 
+            margin-bottom: 15px; backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .upload-area h3 { margin: 0 0 10px; color: #333; font-size: 1.1em; }
+        .upload-controls { display: flex; gap: 10px; align-items: center; }
+        .upload-controls input[type="file"] { flex: 1; }
+        .upload-btn { 
+            padding: 8px 16px; background: #667eea; color: white;
+            border: none; border-radius: 6px; cursor: pointer;
+            font-size: 14px; transition: all 0.2s;
+        }
+        .upload-btn:hover { background: #5a6fd8; transform: translateY(-1px); }
+        
+        .chat-container { 
+            flex: 1; display: flex; flex-direction: column;
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .chat-area { 
+            flex: 1; padding: 20px; overflow-y: auto;
+            background: #fafafa;
+        }
+        .chat-area::-webkit-scrollbar { width: 6px; }
+        .chat-area::-webkit-scrollbar-track { background: #f1f1f1; }
+        .chat-area::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+        
+        .message { 
+            display: flex; margin-bottom: 20px;
+            animation: fadeInUp 0.3s ease-out;
+        }
+        .message-content { 
+            max-width: 70%; padding: 12px 16px;
+            border-radius: 18px; position: relative;
+            word-wrap: break-word; line-height: 1.4;
+        }
+        .message-avatar { 
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; margin: 0 10px;
+            flex-shrink: 0;
+        }
+        
+        .user-message { justify-content: flex-end; }
+        .user-message .message-content { 
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; border-bottom-right-radius: 4px;
+        }
+        .user-message .message-avatar { 
+            background: #667eea; color: white; order: 2;
+        }
+        
+        .ai-message { justify-content: flex-start; }
+        .ai-message .message-content { 
+            background: white; color: #333;
+            border: 1px solid #e1e5e9;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .ai-message .message-avatar { 
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+        }
+        
+        .message-sources { 
+            margin-top: 8px; padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            font-size: 12px; opacity: 0.8;
+        }
+        
+        /* Markdown 样式 */
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+            margin: 16px 0 8px; color: #333; font-weight: 600;
+        }
+        .markdown-content h1 { font-size: 1.5em; border-bottom: 2px solid #eee; padding-bottom: 8px; }
+        .markdown-content h2 { font-size: 1.3em; }
+        .markdown-content h3 { font-size: 1.1em; }
+        .markdown-content p { margin: 8px 0; line-height: 1.6; }
+        .markdown-content ul, .markdown-content ol { margin: 8px 0; padding-left: 20px; }
+        .markdown-content li { margin: 4px 0; }
+        .markdown-content blockquote {
+            margin: 12px 0; padding: 8px 16px;
+            border-left: 4px solid #667eea;
+            background: rgba(102, 126, 234, 0.05);
+            font-style: italic;
+        }
+        .markdown-content code {
+            background: #f8f9fa; padding: 2px 6px;
+            border-radius: 4px; font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9em; color: #e83e8c;
+        }
+        .markdown-content pre {
+            background: #f8f9fa; padding: 12px;
+            border-radius: 8px; overflow-x: auto;
+            margin: 12px 0; border: 1px solid #e9ecef;
+        }
+        .markdown-content pre code {
+            background: none; padding: 0;
+            color: inherit; font-size: 0.9em;
+        }
+        .markdown-content table {
+            width: 100%; border-collapse: collapse;
+            margin: 12px 0; font-size: 0.9em;
+        }
+        .markdown-content th, .markdown-content td {
+            padding: 8px 12px; border: 1px solid #dee2e6;
+            text-align: left;
+        }
+        .markdown-content th {
+            background: #f8f9fa; font-weight: 600;
+        }
+        .markdown-content a {
+            color: #667eea; text-decoration: none;
+        }
+        .markdown-content a:hover {
+            text-decoration: underline;
+        }
+        .markdown-content strong {
+            font-weight: 600; color: #333;
+        }
+        .markdown-content em {
+            font-style: italic; color: #666;
+        }
+        
+        .input-area { 
+            padding: 20px; background: white;
+            border-top: 1px solid #e1e5e9;
+        }
+        .input-container { 
+            display: flex; gap: 12px; align-items: center;
+            background: #f8f9fa; border-radius: 25px;
+            padding: 8px 20px; border: 1px solid #e1e5e9;
+        }
+        .input-container:focus-within { 
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .input-container input { 
+            flex: 1; border: none; background: none;
+            padding: 8px 0; font-size: 15px;
+            outline: none; color: #333;
+        }
+        .input-container input::placeholder { color: #999; }
+        .send-btn { 
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none; color: white; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; font-size: 16px;
+        }
+        .send-btn:hover { transform: scale(1.05); }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .typing-indicator { 
+            display: none; padding: 10px 0;
+            color: #666; font-style: italic;
+        }
+        .typing-dots { 
+            display: inline-block;
+            animation: typing 1.4s infinite;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        .status-message { 
+            margin-top: 8px; font-size: 14px;
+            padding: 8px 12px; border-radius: 6px;
+        }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 Jarvis AI 知识库</h1>
-            <p>上传文档，智能问答</p>
+            <h1>🤖 Jarvis AI</h1>
+            <p>智能文档问答助手</p>
         </div>
         
         <div class="upload-area">
             <h3>📄 文档上传</h3>
-            <input type="file" id="fileInput" accept=".pdf,.md,.markdown">
-            <button onclick="uploadFile()">上传文档</button>
+            <div class="upload-controls">
+                <input type="file" id="fileInput" accept=".pdf,.md,.markdown">
+                <button class="upload-btn" onclick="uploadFile()">上传</button>
+            </div>
             <div id="uploadStatus"></div>
         </div>
         
-        <div class="chat-area" id="chatArea">
-            <div class="message ai-message">
-                👋 你好！我是Jarvis AI，请上传文档后向我提问。
+        <div class="chat-container">
+            <div class="chat-area" id="chatArea">
+                <div class="message ai-message">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        你好！我是 Jarvis AI 智能助手。请上传文档后向我提问，我会基于文档内容为您提供准确的答案。
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        <div class="input-area">
-            <input type="text" id="questionInput" placeholder="请输入问题..." onkeypress="handleKeyPress(event)">
-            <button onclick="sendQuestion()">发送</button>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="message ai-message">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        正在思考<span class="typing-dots">...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <div class="input-container">
+                    <input type="text" id="questionInput" placeholder="请输入您的问题..." onkeypress="handleKeyPress(event)">
+                    <button class="send-btn" onclick="sendQuestion()" id="sendBtn">➤</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         const socket = io();
+        let isWaiting = false;
         
         function uploadFile() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
             if (!file) {
-                alert('请选择文件');
+                showStatus('请选择文件', 'error');
                 return;
             }
             
             const formData = new FormData();
             formData.append('file', file);
+            
+            showStatus('正在上传文档...', 'info');
             
             fetch('/upload', {
                 method: 'POST',
@@ -65,31 +278,55 @@
             })
             .then(response => response.json())
             .then(data => {
-                const status = document.getElementById('uploadStatus');
                 if (data.success) {
-                    status.innerHTML = '✅ 文档上传成功';
-                    status.style.color = 'green';
+                    showStatus('✅ 文档上传成功，可以开始提问了', 'success');
+                    fileInput.value = '';
                 } else {
-                    status.innerHTML = '❌ ' + data.message;
-                    status.style.color = 'red';
+                    showStatus('❌ ' + data.message, 'error');
                 }
+            })
+            .catch(error => {
+                showStatus('❌ 上传失败: ' + error.message, 'error');
             });
+        }
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('uploadStatus');
+            status.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => status.innerHTML = '', 3000);
+            }
         }
         
         function sendQuestion() {
             const input = document.getElementById('questionInput');
             const question = input.value.trim();
-            if (!question) return;
+            if (!question || isWaiting) return;
             
             addMessage(question, 'user');
             input.value = '';
+            setWaiting(true);
             
             socket.emit('query', {question: question});
         }
         
         function handleKeyPress(event) {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
                 sendQuestion();
+            }
+        }
+        
+        function setWaiting(waiting) {
+            isWaiting = waiting;
+            const sendBtn = document.getElementById('sendBtn');
+            const typingIndicator = document.getElementById('typingIndicator');
+            
+            sendBtn.disabled = waiting;
+            typingIndicator.style.display = waiting ? 'block' : 'none';
+            
+            if (waiting) {
+                scrollToBottom();
             }
         }
         
@@ -97,18 +334,90 @@
             const chatArea = document.getElementById('chatArea');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}-message`;
-            messageDiv.innerHTML = content;
+            
+            const avatar = type === 'user' ? '👤' : '🤖';
+            
+            // 处理来源信息
+            let sources = '';
+            let mainContent = content;
+            if (type === 'ai' && content.includes('📚')) {
+                const parts = content.split('<br><br><small>');
+                if (parts.length > 1) {
+                    mainContent = parts[0];
+                    sources = parts[1].replace('</small>', '').replace('参考来源: ', '');
+                }
+            }
+            
+            // 对AI回答应用Markdown渲染
+            let renderedContent;
+            if (type === 'ai') {
+                // 配置marked选项
+                marked.setOptions({
+                    highlight: function(code, lang) {
+                        if (lang && hljs.getLanguage(lang)) {
+                            try {
+                                return hljs.highlight(code, { language: lang }).value;
+                            } catch (err) {}
+                        }
+                        return hljs.highlightAuto(code).value;
+                    },
+                    breaks: true,
+                    gfm: true
+                });
+                renderedContent = marked.parse(mainContent);
+            } else {
+                renderedContent = mainContent;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div class="${type === 'ai' ? 'markdown-content' : ''}">${renderedContent}</div>
+                    ${sources ? `<div class="message-sources">📚 参考来源: ${sources}</div>` : ''}
+                </div>
+            `;
+            
             chatArea.appendChild(messageDiv);
-            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            // 高亮代码块
+            if (type === 'ai') {
+                messageDiv.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            }
+            
+            scrollToBottom();
+        }
+        
+        function scrollToBottom() {
+            const chatArea = document.getElementById('chatArea');
+            setTimeout(() => {
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }, 100);
         }
         
         socket.on('response', function(data) {
+            setWaiting(false);
+            
             let response = data.answer;
             if (data.sources && data.sources.length > 0) {
-                response += '<br><br><small>📚 参考来源: ' + 
-                    data.sources.map(s => s.source).join(', ') + '</small>';
+                // 构建更详细的来源信息
+                let sourcesInfo = data.sources.map((s, index) => {
+                    let sourceText = `${index + 1}. ${s.source}`;
+                    if (s.score) {
+                        sourceText += ` (相似度: ${(s.score * 100).toFixed(1)}%)`;
+                    }
+                    return sourceText;
+                }).join('<br>');
+                
+                response += '<br><br><small>📚 参考来源 (' + data.sources.length + ' 个文档):<br>' + sourcesInfo + '</small>';
             }
             addMessage(response, 'ai');
+        });
+        
+        // 初始化时聚焦输入框
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('questionInput').focus();
         });
     </script>
 </body>

@@ -19,10 +19,10 @@ SERVER_CONFIG = {
 
 # 存储配置
 STORAGE_CONFIG = {
-    "documents_path": "/Volumes/common/jarvis/documents",
-    "vector_db_path": "/Volumes/common/jarvis/vector_db",
-    "uploads_path": "/Volumes/common/jarvis/uploads",
-    "cache_path": "/Volumes/common/jarvis/cache"
+    "documents_path": Path("/Volumes/common/jarvis/documents"),
+    "vector_db_path": Path("/Volumes/common/jarvis/vector_db"),
+    "uploads_path": Path("/Volumes/common/jarvis/uploads"),
+    "cache_path": Path("/Volumes/common/jarvis/cache")
 }
 
 # 模型配置

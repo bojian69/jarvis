@@ -11,7 +11,15 @@ from models.embedding_model import EmbeddingModel
 class VectorManager:
     def __init__(self, config: Dict):
         self.config = config
-        self.client = chromadb.PersistentClient(path=config["vector_db_path"])
+        db_path = str(config["vector_db_path"])
+        
+        # 确保目录存在且有写权限
+        import os
+        from pathlib import Path
+        Path(db_path).mkdir(parents=True, exist_ok=True)
+        os.chmod(db_path, 0o755)
+        
+        self.client = chromadb.PersistentClient(path=db_path)
         self.collection = self.client.get_or_create_collection("documents")
         self.embedding_model = EmbeddingModel(config)
     
@@ -64,4 +72,56 @@ class VectorManager:
     
     def get_stats(self) -> Dict:
         """获取统计信息"""
-        return {"total_chunks": self.collection.count()}
+        try:
+            total_chunks = self.collection.count()
+            
+            # 获取所有文档信息
+            if total_chunks > 0:
+                all_results = self.collection.get()
+                documents = {}
+                
+                for metadata in all_results['metadatas']:
+                    filename = metadata['filename']
+                    doc_type = metadata['type']
+                    if filename not in documents:
+                        documents[filename] = {
+                            'type': doc_type,
+                            'chunks': 0
+                        }
+                    documents[filename]['chunks'] += 1
+                
+                return {
+                    "total_chunks": total_chunks,
+                    "document_count": len(documents),
+                    "documents": documents
+                }
+            else:
+                return {
+                    "total_chunks": 0,
+                    "document_count": 0,
+                    "documents": {}
+                }
+        except Exception as e:
+            return {"error": str(e), "total_chunks": 0, "document_count": 0}
+    
+    def list_documents(self) -> List[Dict]:
+        """列出所有文档"""
+        try:
+            all_results = self.collection.get()
+            documents = {}
+            
+            for i, metadata in enumerate(all_results['metadatas']):
+                filename = metadata['filename']
+                if filename not in documents:
+                    documents[filename] = {
+                        'filename': filename,
+                        'type': metadata['type'],
+                        'doc_id': metadata['doc_id'],
+                        'chunks': 0,
+                        'sample_content': all_results['documents'][i][:100] + "..."
+                    }
+                documents[filename]['chunks'] += 1
+            
+            return list(documents.values())
+        except Exception as e:
+            return []

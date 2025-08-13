@@ -59,7 +59,7 @@ def upload_file():
         
         # 保存临时文件
         temp_path = config['uploads_path'] / file.filename
-        file.save(temp_path)
+        file.save(str(temp_path))
         
         # 添加到知识库
         result = knowledge_engine.add_document(str(temp_path), doc_type)
