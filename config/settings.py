@@ -46,7 +46,9 @@ SEARCH_CONFIG = {
     "max_top_k": 10,
     "relevance_threshold": 0.3,  # 相关性阈值
     "keyword_weight": 0.3,       # 关键词权重
-    "vector_weight": 0.7         # 向量相似度权重
+    "vector_weight": 0.7,        # 向量相似度权重
+    "max_summary_length": 600,   # 总结最大长度
+    "use_smart_summary": True    # 启用智能总结
 }
 
 def get_config() -> dict:

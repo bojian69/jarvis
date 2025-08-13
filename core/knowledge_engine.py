@@ -9,6 +9,7 @@ from typing import List, Dict, Optional
 from .document_processor import DocumentProcessor
 from .vector_manager import VectorManager
 from .query_engine import QueryEngine
+from .summarizer import ContentSummarizer
 from models.llm_interface import LLMInterface
 
 class KnowledgeEngine:
@@ -17,6 +18,7 @@ class KnowledgeEngine:
         self.doc_processor = DocumentProcessor(config)
         self.vector_manager = VectorManager(config)
         self.query_engine = QueryEngine(config)
+        self.summarizer = ContentSummarizer(config)
         self.llm = LLMInterface(config)
         
         logging.info("知识库引擎初始化完成")
@@ -35,7 +37,7 @@ class KnowledgeEngine:
             logging.error(f"添加文档失败: {e}")
             return {"success": False, "error": str(e)}
     
-    def query(self, question: str, top_k: int = 5) -> Dict:
+    def query(self, question: str, top_k: int = 5, use_summary: bool = True) -> Dict:
         """查询知识库"""
         try:
             # 先检查是否是元查询（关于知识库本身的问题）
@@ -47,7 +49,12 @@ class KnowledgeEngine:
             docs = self.query_engine.search(question, top_k)
             
             # 2. 生成回答
-            answer = self.llm.generate_answer(question, docs)
+            if use_summary and docs:
+                # 使用智能总结
+                answer = self.summarizer.summarize_search_results(question, docs)
+            else:
+                # 使用LLM生成
+                answer = self.llm.generate_answer(question, docs)
             
             # 3. 准备来源信息，按文档分组
             sources_by_doc = {}
