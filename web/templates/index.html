@@ -221,9 +221,13 @@
         <div class="upload-area">
             <h3>📄 文档上传</h3>
             <div class="upload-controls">
-                <input type="file" id="fileInput" accept=".pdf,.md,.markdown">
-                <button class="upload-btn" onclick="uploadFile()">上传</button>
+                <input type="file" id="fileInput" accept=".pdf,.md,.markdown" multiple>
+                <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
+                <button class="upload-btn" onclick="selectFiles()">选择文件</button>
+                <button class="upload-btn" onclick="selectFolder()">选择文件夹</button>
+                <button class="upload-btn" onclick="uploadFiles()" id="uploadBtn" disabled>上传</button>
             </div>
+            <div id="fileList"></div>
             <div id="uploadStatus"></div>
         </div>
         
@@ -258,44 +262,144 @@
     <script>
         const socket = io();
         let isWaiting = false;
+        let selectedFiles = [];
         
-        function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            if (!file) {
-                showStatus('请选择文件', 'error');
+        function selectFiles() {
+            document.getElementById('fileInput').click();
+        }
+        
+        function selectFolder() {
+            document.getElementById('folderInput').click();
+        }
+        
+        document.getElementById('fileInput').addEventListener('change', handleFileSelection);
+        document.getElementById('folderInput').addEventListener('change', handleFileSelection);
+        
+        function handleFileSelection(event) {
+            const files = Array.from(event.target.files);
+            const validFiles = files.filter(file => {
+                const ext = file.name.toLowerCase();
+                return ext.endsWith('.pdf') || ext.endsWith('.md') || ext.endsWith('.markdown');
+            });
+            
+            selectedFiles = [...selectedFiles, ...validFiles];
+            updateFileList();
+            updateUploadButton();
+        }
+        
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '';
                 return;
             }
             
-            const formData = new FormData();
-            formData.append('file', file);
+            const listHtml = `
+                <div class="file-list">
+                    ${selectedFiles.map((file, index) => `
+                        <div class="file-item">
+                            <span class="file-name">${file.name}</span>
+                            <span class="file-size">${formatFileSize(file.size)}</span>
+                            <button class="remove-btn" onclick="removeFile(${index})">×</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            fileList.innerHTML = listHtml;
+        }
+        
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+            updateUploadButton();
+        }
+        
+        function updateUploadButton() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            uploadBtn.disabled = selectedFiles.length === 0;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+        
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) return;
             
-            showStatus('正在上传文档...', 'info');
+            const uploadBtn = document.getElementById('uploadBtn');
+            uploadBtn.disabled = true;
             
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showStatus('✅ 文档上传成功，可以开始提问了', 'success');
-                    fileInput.value = '';
-                } else {
-                    showStatus('❌ ' + data.message, 'error');
+            showStatus(`正在上传 ${selectedFiles.length} 个文件...`, 'info');
+            
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                        console.error(`上传失败: ${file.name} - ${data.message}`);
+                    }
+                } catch (error) {
+                    errorCount++;
+                    console.error(`上传错误: ${file.name} - ${error.message}`);
                 }
-            })
-            .catch(error => {
-                showStatus('❌ 上传失败: ' + error.message, 'error');
-            });
+                
+                // 更新进度
+                const progress = ((i + 1) / selectedFiles.length) * 100;
+                updateProgress(progress, `已处理 ${i + 1}/${selectedFiles.length} 个文件`);
+            }
+            
+            // 显示结果
+            if (errorCount === 0) {
+                showStatus(`✅ 所有 ${successCount} 个文件上传成功`, 'success');
+            } else {
+                showStatus(`⚠️ 上传完成: ${successCount} 成功, ${errorCount} 失败`, 'error');
+            }
+            
+            // 清理
+            selectedFiles = [];
+            updateFileList();
+            updateUploadButton();
+            document.getElementById('fileInput').value = '';
+            document.getElementById('folderInput').value = '';
+            
+            setTimeout(() => {
+                document.getElementById('uploadStatus').innerHTML = '';
+            }, 3000);
+        }
+        
+        function updateProgress(percent, message) {
+            const status = document.getElementById('uploadStatus');
+            status.innerHTML = `
+                <div class="upload-progress">
+                    <div>${message}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percent}%"></div>
+                    </div>
+                </div>
+            `;
         }
         
         function showStatus(message, type) {
             const status = document.getElementById('uploadStatus');
             status.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
-            if (type === 'success' || type === 'error') {
-                setTimeout(() => status.innerHTML = '', 3000);
-            }
         }
         
         function sendQuestion() {
