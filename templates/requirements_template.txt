@@ -1,0 +1,37 @@
+# {{project_name}} 依赖包
+
+# Web框架
+flask=={{flask_version}}
+flask-socketio=={{flask_socketio_version}}
+python-socketio=={{python_socketio_version}}
+eventlet=={{eventlet_version}}
+
+# 向量数据库
+chromadb=={{chromadb_version}}
+
+# 机器学习 (可选)
+# sentence-transformers=={{sentence_transformers_version}}
+# torch>={{torch_version}}
+
+# 文档处理
+PyPDF2=={{pypdf2_version}}
+markdown=={{markdown_version}}
+
+# 网络请求
+requests=={{requests_version}}
+
+# 工具库
+numpy>={{numpy_version}}
+pandas>={{pandas_version}}
+pathlib2>={{pathlib2_version}}
+
+# 安全工具
+werkzeug>={{werkzeug_version}}
+
+# 日志和监控
+logging-config=={{logging_config_version}}
+
+# 开发工具 (可选)
+# pytest=={{pytest_version}}
+# black=={{black_version}}
+# flake8=={{flake8_version}}

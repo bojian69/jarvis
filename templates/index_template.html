@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{project_title}}</title>
+    <style>
+        {{css_styles}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>{{page_title}}</h1>
+            <p>{{page_description}}</p>
+        </header>
+
+        <main>
+            <!-- 文件上传区域 -->
+            <section class="upload-section">
+                <h2>📄 文档上传</h2>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" accept="{{accepted_file_types}}" style="display: none;">
+                    <div class="upload-text">
+                        <p>点击或拖拽文件到此处上传</p>
+                        <small>支持格式: {{supported_formats}}</small>
+                    </div>
+                </div>
+                <div id="uploadStatus" class="status-message"></div>
+            </section>
+
+            <!-- 聊天区域 -->
+            <section class="chat-section">
+                <h2>💬 智能问答</h2>
+                <div id="chatBox" class="chat-box"></div>
+                <div class="input-group">
+                    <input type="text" id="messageInput" placeholder="{{input_placeholder}}" maxlength="{{max_input_length}}">
+                    <button id="sendButton">发送</button>
+                    <button id="voiceButton" class="voice-btn">🎤</button>
+                </div>
+            </section>
+
+            <!-- 统计信息 -->
+            <section class="stats-section">
+                <h2>📊 知识库统计</h2>
+                <div id="statsInfo" class="stats-info">
+                    <div class="stat-item">
+                        <span class="stat-label">文档数量:</span>
+                        <span id="docCount" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">总片段:</span>
+                        <span id="chunkCount" class="stat-value">0</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{socketio_js_url}}"></script>
+    <script>
+        {{javascript_code}}
+    </script>
+</body>
+</html>

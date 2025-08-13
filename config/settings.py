@@ -43,7 +43,10 @@ DOCUMENT_CONFIG = {
 # 搜索配置
 SEARCH_CONFIG = {
     "default_top_k": 3,
-    "max_top_k": 10
+    "max_top_k": 10,
+    "relevance_threshold": 0.3,  # 相关性阈值
+    "keyword_weight": 0.3,       # 关键词权重
+    "vector_weight": 0.7         # 向量相似度权重
 }
 
 def get_config() -> dict:
