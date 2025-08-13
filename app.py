@@ -100,6 +100,54 @@ def get_stats():
         logging.error(f"获取统计信息错误: {e}")
         return jsonify({'error': str(e)})
 
+@app.route('/view/<path:filename>')
+def view_file(filename):
+    """查看源文件内容"""
+    try:
+        # 递归查找文件
+        docs_path = Path(config['documents_path'])
+        file_path = None
+        
+        # 在所有子目录中查找文件
+        for file_candidate in docs_path.rglob('*'):
+            if file_candidate.is_file() and file_candidate.name == filename:
+                file_path = file_candidate
+                break
+        
+        if not file_path:
+            # 尝试从向量数据库获取内容
+            try:
+                vector_content = knowledge_engine.get_document_content(filename)
+                if vector_content:
+                    return jsonify({
+                        'filename': filename,
+                        'type': 'markdown',
+                        'content': vector_content,
+                        'source': 'vector_db'
+                    })
+            except Exception as ve:
+                logging.error(f"从向量数据库获取内容失败: {ve}")
+            
+            logging.warning(f"文件未找到: {filename}")
+            return jsonify({'error': f'文件未找到: {filename}'}), 404
+        
+        # 读取文件内容
+        if file_path.suffix.lower() in ['.md', '.markdown']:
+            content = file_path.read_text(encoding='utf-8')
+            logging.info(f"成功读取文件: {file_path}")
+            return jsonify({
+                'filename': filename,
+                'type': 'markdown',
+                'content': content,
+                'path': str(file_path)
+            })
+        else:
+            return jsonify({'error': f'不支持的文件类型: {file_path.suffix}'}), 400
+            
+    except Exception as e:
+        logging.error(f"查看文件错误: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     logging.info("🤖 Jarvis AI 知识库启动中...")
     logging.info(f"访问地址: http://localhost:{config['port']}")

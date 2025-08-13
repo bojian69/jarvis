@@ -125,3 +125,34 @@ class VectorManager:
             return list(documents.values())
         except Exception as e:
             return []
+    
+    def get_document_content(self, filename: str) -> str:
+        """从向量数据库获取文档内容"""
+        try:
+            if self.collection:
+                # 获取所有数据
+                all_results = self.collection.get()
+                
+                # 查找匹配的文件
+                content_parts = []
+                for i, metadata in enumerate(all_results['metadatas']):
+                    if metadata['filename'] == filename:
+                        content_parts.append(all_results['documents'][i])
+                
+                if content_parts:
+                    # 合并所有片段
+                    return '\n\n'.join(content_parts)
+            else:
+                # 备用存储
+                content_parts = []
+                for doc in self.documents:
+                    if doc['metadata']['filename'] == filename:
+                        content_parts.append(doc['content'])
+                
+                if content_parts:
+                    return '\n\n'.join(content_parts)
+            
+            return None
+        except Exception as e:
+            logging.error(f"获取文档内容失败: {e}")
+            return None

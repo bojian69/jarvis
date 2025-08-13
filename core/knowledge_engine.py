@@ -89,6 +89,10 @@ class KnowledgeEngine:
         """列出所有文档"""
         return self.vector_manager.list_documents()
     
+    def get_document_content(self, filename: str) -> str:
+        """从向量数据库获取文档内容"""
+        return self.vector_manager.get_document_content(filename)
+    
     def handle_meta_query(self, question: str) -> Dict:
         """处理元查询（关于知识库本身的问题）"""
         question_lower = question.lower()
