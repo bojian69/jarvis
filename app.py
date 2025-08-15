@@ -180,7 +180,11 @@ if __name__ == '__main__':
     
     local_ip = get_local_ip()
     port = config['port']
-    
+    host = config['host']
+    debug = config['debug']
+
+    logging.info(f"host:{host}")
+    logging.info(f"debug:{debug}")
     logging.info(f"🌐 本地访问: http://localhost:{port}")
     logging.info(f"🌍 外网访问: http://{local_ip}:{port}")
     
