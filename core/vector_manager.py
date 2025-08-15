@@ -19,6 +19,10 @@ class VectorManager:
         Path(db_path).mkdir(parents=True, exist_ok=True)
         os.chmod(db_path, 0o755)
         
+        # 禁用遥测以避免错误日志
+        import os
+        os.environ['ANONYMIZED_TELEMETRY'] = 'False'
+        
         self.client = chromadb.PersistentClient(path=db_path)
         self.collection = self.client.get_or_create_collection("documents")
         self.embedding_model = EmbeddingModel(config)

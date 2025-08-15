@@ -73,6 +73,30 @@
         .upload-controls input[type="file"]:hover {
             border-color: #667eea; background: #f0f4ff;
         }
+        .drag-drop-area {
+            margin-top: 15px; padding: 30px; border: 2px dashed #ddd;
+            border-radius: 12px; background: #f8f9fa;
+            text-align: center; transition: all 0.3s;
+            cursor: pointer;
+        }
+        .drag-drop-area:hover, .drag-drop-area.drag-over {
+            border-color: #667eea; background: #f0f4ff;
+            transform: translateY(-2px);
+        }
+        .drag-drop-content p {
+            margin: 5px 0; color: #495057;
+        }
+        .progress-bar {
+            width: 100%; height: 8px; background: #e9ecef;
+            border-radius: 4px; overflow: hidden; margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 0%; transition: width 0.3s ease;
+        }
+        .progress-text {
+            font-size: 14px; color: #6c757d; text-align: center;
+        }
         .upload-btn { 
             padding: 12px 20px; background: linear-gradient(135deg, #667eea, #764ba2);
             color: white; border: none; border-radius: 8px; cursor: pointer;
@@ -386,13 +410,26 @@
             <p>智能文档问答助手</p>
         </div>
         
-        <div class="upload-area">
-            <h3>📄 文档上传</h3>
+        <div class="upload-area" id="uploadArea">
+            <h3>📄 文档上传 <span style="font-size: 0.8em; color: #6c757d;">(支持批量上传)</span></h3>
             <div class="upload-controls">
-                <input type="file" id="fileInput" accept=".pdf,.md,.markdown">
-                <button class="upload-btn" onclick="uploadFile()">上传</button>
+                <input type="file" id="fileInput" accept=".pdf,.md,.markdown" multiple>
+                <button class="upload-btn" onclick="uploadFiles()">上传文件</button>
+            </div>
+            <div class="drag-drop-area" id="dragDropArea">
+                <div class="drag-drop-content">
+                    <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
+                    <p>拖拽文件到此处或点击选择文件</p>
+                    <p style="font-size: 0.9em; color: #6c757d;">支持 PDF、Markdown 格式，可同时上传多个文件</p>
+                </div>
             </div>
             <div id="uploadStatus"></div>
+            <div id="uploadProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">0/0 文件已上传</div>
+            </div>
         </div>
         
         <div class="chat-container">
@@ -416,7 +453,7 @@
             
             <div class="input-area">
                 <div class="input-container">
-                    <input type="text" id="questionInput" placeholder="请输入您的问题..." onkeypress="handleKeyPress(event)">
+                    <input type="text" id="questionInput" placeholder="请输入您的问题..." onkeypress="handleKeyPress(event)" autocomplete="off">
                     <button class="send-btn" onclick="sendQuestion()" id="sendBtn">➤</button>
                 </div>
             </div>
@@ -445,34 +482,81 @@
         const socket = io();
         let isWaiting = false;
         
-        function uploadFile() {
+        function uploadFiles() {
             const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            if (!file) {
+            const files = fileInput.files;
+            if (files.length === 0) {
                 showStatus('请选择文件', 'error');
                 return;
             }
             
-            const formData = new FormData();
-            formData.append('file', file);
+            uploadFileList(files);
+        }
+        
+        function uploadFileList(files) {
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
             
-            showStatus('正在上传文档...', 'info');
+            progressDiv.style.display = 'block';
+            showStatus('正在批量上传文档...', 'info');
             
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showStatus('✅ 文档上传成功，可以开始提问了', 'success');
-                    fileInput.value = '';
+            let completed = 0;
+            let successful = 0;
+            let failed = 0;
+            const total = files.length;
+            
+            const uploadPromises = Array.from(files).map((file, index) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                return fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    completed++;
+                    if (data.success) {
+                        successful++;
+                    } else {
+                        failed++;
+                        console.error(`文件 ${file.name} 上传失败:`, data.message);
+                    }
+                    
+                    // 更新进度
+                    const progress = (completed / total) * 100;
+                    progressFill.style.width = progress + '%';
+                    progressText.textContent = `${completed}/${total} 文件已处理`;
+                    
+                    return { file: file.name, success: data.success, message: data.message };
+                })
+                .catch(error => {
+                    completed++;
+                    failed++;
+                    console.error(`文件 ${file.name} 上传失败:`, error);
+                    
+                    const progress = (completed / total) * 100;
+                    progressFill.style.width = progress + '%';
+                    progressText.textContent = `${completed}/${total} 文件已处理`;
+                    
+                    return { file: file.name, success: false, message: error.message };
+                });
+            });
+            
+            Promise.all(uploadPromises).then(results => {
+                progressDiv.style.display = 'none';
+                
+                if (successful === total) {
+                    showStatus(`✅ 全部 ${total} 个文件上传成功，可以开始提问了`, 'success');
+                } else if (successful > 0) {
+                    showStatus(`⚠️ ${successful} 个文件上传成功，${failed} 个文件失败`, 'info');
                 } else {
-                    showStatus('❌ ' + data.message, 'error');
+                    showStatus(`❌ 全部 ${total} 个文件上传失败`, 'error');
                 }
-            })
-            .catch(error => {
-                showStatus('❌ 上传失败: ' + error.message, 'error');
+                
+                // 清空文件选择
+                document.getElementById('fileInput').value = '';
             });
         }
         
@@ -674,9 +758,76 @@
             }
         });
         
-        // 初始化时聚焦输入框
+        // 拖拽上传功能
+        function initDragDrop() {
+            const dragDropArea = document.getElementById('dragDropArea');
+            const uploadArea = document.getElementById('uploadArea');
+            
+            // 点击拖拽区域触发文件选择
+            dragDropArea.addEventListener('click', function() {
+                document.getElementById('fileInput').click();
+            });
+            
+            // 阻止默认拖拽行为
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // 拖拽进入和离开效果
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight(e) {
+                dragDropArea.classList.add('drag-over');
+            }
+            
+            function unhighlight(e) {
+                dragDropArea.classList.remove('drag-over');
+            }
+            
+            // 处理文件拖拽
+            uploadArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    // 过滤支持的文件类型
+                    const supportedFiles = Array.from(files).filter(file => {
+                        const ext = file.name.toLowerCase();
+                        return ext.endsWith('.pdf') || ext.endsWith('.md') || ext.endsWith('.markdown');
+                    });
+                    
+                    if (supportedFiles.length === 0) {
+                        showStatus('❌ 没有找到支持的文件格式（PDF、Markdown）', 'error');
+                        return;
+                    }
+                    
+                    if (supportedFiles.length < files.length) {
+                        showStatus(`⚠️ 已过滤 ${files.length - supportedFiles.length} 个不支持的文件`, 'info');
+                    }
+                    
+                    uploadFileList(supportedFiles);
+                }
+            }
+        }
+        
+        // 初始化时聚焦输入框和拖拽功能
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('questionInput').focus();
+            initDragDrop();
         });
     </script>
 </body>

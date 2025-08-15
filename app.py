@@ -22,7 +22,7 @@ setup_logger()
 # 创建Flask应用
 app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
 app.config['SECRET_KEY'] = 'jarvis-ai-knowledge-base'
-app.config['MAX_CONTENT_LENGTH'] = config['max_file_size']
+app.config['MAX_CONTENT_LENGTH'] = config.get('max_file_size', 16 * 1024 * 1024)  # 16MB 默认限制
 
 # 初始化SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -41,7 +41,7 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    """文件上传接口"""
+    """文件上传接口 - 支持单文件上传，保持原始文件名"""
     try:
         if 'file' not in request.files:
             return jsonify({'success': False, 'message': '没有选择文件'})
@@ -50,29 +50,43 @@ def upload_file():
         if file.filename == '':
             return jsonify({'success': False, 'message': '文件名为空'})
         
+        # 保持原始文件名，只做安全性检查
+        original_filename = file.filename
+        
+        # 安全性检查：防止路径遍历
+        if '..' in original_filename or '/' in original_filename or '\\' in original_filename:
+            return jsonify({'success': False, 'message': '文件名包含非法字符'})
+        
         # 确定文件类型
-        if file.filename.lower().endswith('.pdf'):
+        filename_lower = original_filename.lower()
+        if filename_lower.endswith('.pdf'):
             doc_type = 'pdf'
-        elif file.filename.lower().endswith(('.md', '.markdown')):
+        elif filename_lower.endswith(('.md', '.markdown')):
             doc_type = 'markdown'
         else:
-            return jsonify({'success': False, 'message': '不支持的文件类型'})
+            return jsonify({'success': False, 'message': '不支持的文件类型，仅支持 PDF 和 Markdown 文件'})
         
-        # 保存临时文件
-        temp_path = config['uploads_path'] / file.filename
+        # 使用原始文件名保存临时文件
+        temp_path = config['uploads_path'] / original_filename
+        
+        # 如果文件已存在，先删除
+        if temp_path.exists():
+            temp_path.unlink()
+        
         file.save(str(temp_path))
         
-        # 添加到知识库
-        result = knowledge_engine.add_document(str(temp_path), doc_type)
+        # 添加到知识库，传入原始文件名
+        result = knowledge_engine.add_document(str(temp_path), doc_type, original_filename)
         
         # 记录文件上传
         if result.get('success'):
-            logging.info(f"📄 文件上传成功: {file.filename} ({doc_type})")
+            logging.info(f"📄 文件上传成功: {original_filename} ({doc_type})")
         else:
-            logging.warning(f"⚠️ 文件上传失败: {file.filename} - {result.get('error', '未知错误')}")
+            logging.warning(f"⚠️ 文件上传失败: {original_filename} - {result.get('error', '未知错误')}")
         
         # 清理临时文件
-        temp_path.unlink()
+        if temp_path.exists():
+            temp_path.unlink()
         
         return jsonify(result)
         
@@ -157,6 +171,23 @@ def view_file(filename):
                 'content': content,
                 'path': str(file_path)
             })
+        elif file_path.suffix.lower() == '.pdf':
+            # PDF文件从向量数据库获取内容
+            try:
+                vector_content = knowledge_engine.get_document_content(filename)
+                if vector_content:
+                    return jsonify({
+                        'filename': filename,
+                        'type': 'markdown',  # 以markdown格式显示PDF内容
+                        'content': vector_content,
+                        'source': 'vector_db',
+                        'path': str(file_path)
+                    })
+                else:
+                    return jsonify({'error': f'无法获取PDF文件内容: {filename}'}), 404
+            except Exception as e:
+                logging.error(f"获取PDF内容失败: {e}")
+                return jsonify({'error': f'获取PDF内容失败: {str(e)}'}), 500
         else:
             return jsonify({'error': f'不支持的文件类型: {file_path.suffix}'}), 400
             

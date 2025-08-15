@@ -23,11 +23,11 @@ class KnowledgeEngine:
         
         logging.info("知识库引擎初始化完成")
     
-    def add_document(self, file_path: str, doc_type: str) -> Dict:
+    def add_document(self, file_path: str, doc_type: str, original_filename: str = None) -> Dict:
         """添加文档到知识库"""
         try:
-            # 1. 处理文档
-            doc_data = self.doc_processor.process_document(file_path, doc_type)
+            # 1. 处理文档，传入原始文件名
+            doc_data = self.doc_processor.process_document(file_path, doc_type, original_filename)
             
             # 2. 向量化存储
             result = self.vector_manager.add_document(doc_data)
