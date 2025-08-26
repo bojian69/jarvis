@@ -28,7 +28,8 @@ STORAGE_CONFIG = {
 # 模型配置
 MODEL_CONFIG = {
     "llm_url": "http://localhost:11434",
-    "llm_model": "qwen2.5:7b",
+    # "llm_model": "qwen2.5:7b",
+    "llm_model": "qwen3:30b",
     "embedding_model": "paraphrase-multilingual-MiniLM-L12-v2"
 }
 
@@ -44,7 +45,7 @@ DOCUMENT_CONFIG = {
 SEARCH_CONFIG = {
     "default_top_k": 3,
     "max_top_k": 10,
-    "relevance_threshold": 0.3,  # 相关性阈值
+    "relevance_threshold": 0.1,  # 降低相关性阈值
     "keyword_weight": 0.3,       # 关键词权重
     "vector_weight": 0.7,        # 向量相似度权重
     "max_summary_length": 600,   # 总结最大长度

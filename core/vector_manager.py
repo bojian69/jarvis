@@ -56,23 +56,40 @@ class VectorManager:
     
     def search(self, query: str, top_k: int = 3) -> List[Dict]:
         """向量搜索"""
-        query_embedding = self.embedding_model.encode([query])[0]
-        
-        results = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k
-        )
-        
-        documents = []
-        for i in range(len(results['documents'][0])):
-            documents.append({
-                'content': results['documents'][0][i],
-                'source': results['metadatas'][0][i]['filename'],
-                'type': results['metadatas'][0][i]['type'],
-                'score': 1 - results['distances'][0][i]  # 转换为相似度分数
-            })
-        
-        return documents
+        try:
+            query_embedding = self.embedding_model.encode([query])[0]
+            
+            # 获取数据库中的总数量
+            total_count = self.collection.count()
+            if total_count == 0:
+                return []
+            
+            # 确保不超过数据库中的总数量
+            actual_top_k = min(top_k, total_count)
+            
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=actual_top_k
+            )
+            
+            documents = []
+            if results['documents'] and results['documents'][0]:
+                for i in range(len(results['documents'][0])):
+                    # 计算相似度分数，确保在 0-1 范围内
+                    distance = results['distances'][0][i]
+                    score = max(0, 1 - distance)  # 确保分数不为负
+                    
+                    documents.append({
+                        'content': results['documents'][0][i],
+                        'source': results['metadatas'][0][i]['filename'],
+                        'type': results['metadatas'][0][i]['type'],
+                        'score': score
+                    })
+            
+            return documents
+        except Exception as e:
+            print(f"搜索错误: {e}")
+            return []
     
     def get_stats(self) -> Dict:
         """获取统计信息"""

@@ -102,15 +102,15 @@ class ContentSummarizer:
         for i, item in enumerate(relevant_content[:3], 1):
             content = item['text']
             # 限制每个要点的长度
-            if len(content) > 100:
-                content = content[:100] + "..."
+            if len(content) > 200:
+                content = content[:200] + "..."
             main_content.append(f"{i}. {content}")
         
         summary_parts.extend(main_content)
         
         # 来源信息
         if sources:
-            source_list = list(sources)[:3]  # 最多显示3个来源
+            source_list = list(sources)[:6]  # 最多显示6个来源
             if len(source_list) == 1:
                 summary_parts.append(f"\n📄 来源：{source_list[0]}")
             else:

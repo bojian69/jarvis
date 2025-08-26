@@ -4,6 +4,10 @@
 Jarvis AI 本地知识库 - 主应用
 """
 
+# 禁用ChromaDB遥测
+import os
+os.environ['ANONYMIZED_TELEMETRY'] = 'False'
+
 import logging
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
@@ -223,5 +227,6 @@ if __name__ == '__main__':
         app,
         host=config['host'],
         port=port,
-        debug=config['debug']
+        debug=config['debug'],
+        allow_unsafe_werkzeug=True
     )
