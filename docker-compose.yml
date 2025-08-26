@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  jarvis-ai:
+    build: .
+    container_name: jarvis-ai
+    ports:
+      - "${JARVIS_PORT:-8080}:8080"
+    volumes:
+      # 数据持久化
+      - jarvis_documents:/data/documents
+      - jarvis_vector_db:/data/vector_db
+      - jarvis_uploads:/data/uploads
+      - jarvis_logs:/data/logs
+      # 配置文件挂载（可选）
+      - ./config/docker_settings.py:/app/config/settings.py:ro
+    environment:
+      # 服务器配置
+      - JARVIS_HOST=${JARVIS_HOST:-0.0.0.0}
+      - JARVIS_PORT=${JARVIS_PORT:-8080}
+      - JARVIS_DEBUG=${JARVIS_DEBUG:-false}
+      
+      # 存储路径配置
+      - JARVIS_DOCUMENTS_PATH=/data/documents
+      - JARVIS_VECTOR_DB_PATH=/data/vector_db
+      - JARVIS_UPLOADS_PATH=/data/uploads
+      - JARVIS_LOGS_PATH=/data/logs
+      
+      # LLM配置
+      - JARVIS_LLM_URL=${JARVIS_LLM_URL:-http://host.docker.internal:11434}
+      - JARVIS_LLM_MODEL=${JARVIS_LLM_MODEL:-qwen2.5:7b}
+      
+      # 搜索配置
+      - JARVIS_RELEVANCE_THRESHOLD=${JARVIS_RELEVANCE_THRESHOLD:-0.1}
+      - JARVIS_MAX_FILE_SIZE=${JARVIS_MAX_FILE_SIZE:-52428800}
+      
+      # 禁用ChromaDB遥测
+      - ANONYMIZED_TELEMETRY=False
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 可选：Ollama服务
+  ollama:
+    image: ollama/ollama:latest
+    container_name: jarvis-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+    profiles:
+      - ollama
+
+volumes:
+  jarvis_documents:
+    driver: local
+  jarvis_vector_db:
+    driver: local
+  jarvis_uploads:
+    driver: local
+  jarvis_logs:
+    driver: local
+  ollama_data:
+    driver: local
+
+networks:
+  default:
+    name: jarvis-network
