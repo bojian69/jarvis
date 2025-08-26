@@ -23,8 +23,28 @@ class VectorManager:
         import os
         os.environ['ANONYMIZED_TELEMETRY'] = 'False'
         
-        self.client = chromadb.PersistentClient(path=db_path)
-        self.collection = self.client.get_or_create_collection("documents")
+        try:
+            # 使用新的ChromaDB配置方法
+            from chromadb.config import Settings
+            settings = Settings(
+                persist_directory=db_path,
+                anonymized_telemetry=False
+            )
+            self.client = chromadb.Client(settings)
+            self.collection = self.client.get_or_create_collection("documents")
+        except Exception as e:
+            print(f"ChromaDB初始化失败，尝试重置: {e}")
+            # 如果失败，删除数据库文件重新创建
+            import shutil
+            if Path(db_path).exists():
+                shutil.rmtree(db_path)
+            Path(db_path).mkdir(parents=True, exist_ok=True)
+            settings = Settings(
+                persist_directory=db_path,
+                anonymized_telemetry=False
+            )
+            self.client = chromadb.Client(settings)
+            self.collection = self.client.get_or_create_collection("documents")
         self.embedding_model = EmbeddingModel(config)
     
     def add_document(self, doc_data: Dict) -> Dict:
