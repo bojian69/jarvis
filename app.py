@@ -4,6 +4,14 @@
 Jarvis AI 本地知识库 - 主应用
 """
 
+<<<<<<< Updated upstream
+=======
+# 禁用ChromaDB遥测 - 必须在导入chromadb之前设置
+import os
+os.environ['ANONYMIZED_TELEMETRY'] = 'False'
+os.environ['CHROMA_TELEMETRY_DISABLED'] = 'True'
+
+>>>>>>> Stashed changes
 import logging
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit

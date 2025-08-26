@@ -22,6 +22,17 @@ class VectorManager:
             self.collection = None
             self.documents = []
         
+<<<<<<< Updated upstream
+=======
+        # 禁用遥测以避免错误日志
+        import os
+        os.environ['ANONYMIZED_TELEMETRY'] = 'False'
+        os.environ['CHROMA_TELEMETRY_DISABLED'] = 'True'
+        
+        # 创建客户端（适配0.4.24版本）
+        self.client = chromadb.PersistentClient(path=db_path)
+        self.collection = self.client.get_or_create_collection(name="documents")
+>>>>>>> Stashed changes
         self.embedding_model = EmbeddingModel(config)
     
     def add_document(self, doc_data: Dict) -> Dict:
@@ -61,6 +72,8 @@ class VectorManager:
                         'type': doc_data['type']
                     }
                 })
+        
+        # 0.4.24版本不需要手动persist
         
         return {"doc_id": doc_id, "chunks_added": len(chunks)}
     
